@@ -218,9 +218,14 @@ begin
   );
 end $$;
 
-revoke execute on function public.leaderboard(uuid) from anon;
-revoke execute on function public.join_competition(text,text,text,numeric) from anon;
-revoke execute on function public.log_weight(uuid,numeric) from anon;
+-- ============ Access ============
+-- Signed-in family members use the tables (row-level security above decides what they can see).
+-- Logged-out visitors get nothing.
+grant usage on schema public to authenticated;
+grant select, insert, update, delete on all tables in schema public to authenticated;
+revoke all on all tables in schema public from anon;
+revoke execute on all functions in schema public from public, anon;
+grant execute on all functions in schema public to authenticated, service_role;
 
 -- ============ The Bali Body Battle itself ============
 -- Week 0 = Sunday 11 Oct 2026, final weigh-in (week 10) = Sunday 20 Dec 2026, results at 7pm Melbourne time.
