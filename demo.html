@@ -1,0 +1,904 @@
+<title>Bali Body Battle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shrikhand&family=Figtree:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: one phone-width app column. Sticky header, scrolling view, fixed tab bar. A boarding pass to Denpasar (DPS) anchors the home screen. */
+:root{
+  --bg:#E7F2EF; --surface:#FFFFFF; --surface-2:#F1F8F6; --ink:#0F2A30; --muted:#587377; --line:#D3E4E0;
+  --lagoon:#0B7F7C; --hibiscus:#D93366; --sunset:#EF7A45; --gold:#DFA022; --yellow:#F2D20C; --good:#13825E; --bad:#C2410C;
+  --pass-bg:#0F2A30; --pass-ink:#F5EFE2; --pass-muted:#9DB8B9; --pass-accent:#F5BE4B;
+  --overlay:#06161BEE;
+  --shadow:0 1px 2px #0F2A300F, 0 10px 28px #0F2A3014;
+  --f-display:"Shrikhand", "Georgia", serif;
+  --f-body:"Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#071A20; --surface:#0E262D; --surface-2:#132F38; --ink:#E8F3F0; --muted:#8EAAAE; --line:#1E3D46;
+  --lagoon:#3CC4B9; --hibiscus:#FF5C8A; --sunset:#FF9466; --gold:#F5BE4B; --yellow:#F5DB2A; --good:#3DD39A; --bad:#FF8A5B;
+  --pass-bg:#F5EEDC; --pass-ink:#0F2A30; --pass-muted:#5E7579; --pass-accent:#B5471D;
+  --overlay:#030D10F2; --shadow:0 1px 2px #0006, 0 10px 28px #0005; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#071A20; --surface:#0E262D; --surface-2:#132F38; --ink:#E8F3F0; --muted:#8EAAAE; --line:#1E3D46;
+  --lagoon:#3CC4B9; --hibiscus:#FF5C8A; --sunset:#FF9466; --gold:#F5BE4B; --yellow:#F5DB2A; --good:#3DD39A; --bad:#FF8A5B;
+  --pass-bg:#F5EEDC; --pass-ink:#0F2A30; --pass-muted:#5E7579; --pass-accent:#B5471D;
+  --overlay:#030D10F2; --shadow:0 1px 2px #0006, 0 10px 28px #0005; color-scheme:dark }
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--lagoon);outline-offset:2px;border-radius:8px}
+.num{font-variant-numeric:tabular-nums}
+.app{max-width:480px;margin:0 auto;min-height:100%;position:relative}
+
+/* Header */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);padding:12px 16px 10px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line)}
+.wordmark{font-family:var(--f-display);font-size:22px;line-height:1;letter-spacing:.2px;background:linear-gradient(95deg,var(--hibiscus),var(--sunset) 55%,var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent;margin:0;flex:1;min-width:0}
+.demo-chip{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border:1px dashed var(--line);padding:4px 7px;border-radius:6px;white-space:nowrap}
+.icon-btn{width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;font-size:16px}
+
+.view{padding:16px 16px calc(96px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:18px}
+h2.sec{font-size:13px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:4px 0 -8px;font-weight:700;display:flex;justify-content:space-between;align-items:baseline}
+h2.sec small{font-weight:600;letter-spacing:.02em;text-transform:none;font-size:12px}
+
+/* Boarding pass */
+.pass{background:var(--pass-bg);color:var(--pass-ink);border-radius:18px;position:relative;overflow:hidden;box-shadow:var(--shadow)}
+.pass-main{padding:16px 18px 14px;display:grid;grid-template-columns:1fr auto 1fr;align-items:end;gap:6px}
+.pass .lbl{font-family:var(--f-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--pass-muted)}
+.pass .code{font-family:var(--f-mono);font-weight:600;font-size:30px;line-height:1}
+.pass .to{text-align:right}
+.pass .mid{text-align:center;font-size:20px;padding-bottom:4px}
+.pass-track{margin:0 18px 14px;position:relative;height:22px}
+.pass-track .rail{position:absolute;left:0;right:0;top:10px;border-top:2px dashed var(--pass-muted);opacity:.6}
+.pass-track .done{position:absolute;left:0;top:9px;height:4px;border-radius:4px;background:linear-gradient(90deg,var(--lagoon),var(--sunset));transition:width 1.2s cubic-bezier(.2,.8,.2,1)}
+.pass-track .plane{position:absolute;top:-2px;font-size:20px;transform:translateX(-50%);transition:left 1.2s cubic-bezier(.2,.8,.2,1)}
+.pass-note{padding:0 18px 14px;font-size:12.5px;color:var(--pass-muted)}
+.pass-note b{color:var(--pass-ink)}
+.pass-stub{border-top:2px dashed color-mix(in srgb,var(--pass-muted) 50%,transparent);display:grid;grid-template-columns:repeat(3,1fr);padding:12px 18px 14px;gap:8px;position:relative}
+.pass-stub::before,.pass-stub::after{content:"";position:absolute;top:-11px;width:20px;height:20px;border-radius:50%;background:var(--bg)}
+.pass-stub::before{left:-10px}.pass-stub::after{right:-10px}
+.pass-stub .v{font-family:var(--f-mono);font-weight:600;font-size:17px;margin-top:2px}
+.pass-stub .v.pot{color:var(--pass-accent)}
+
+/* Week banner */
+.week{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.week-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.week-head b{font-size:16px}
+.week-head span{font-size:12.5px;color:var(--muted)}
+.dots{display:flex;gap:6px;flex-wrap:wrap}
+.dot{width:34px;height:34px;border-radius:50%;background:var(--surface-2);display:grid;place-items:center;font-size:17px;position:relative;border:2px solid transparent}
+.dot.in{border-color:var(--good)}
+.dot.in::after{content:"✓";position:absolute;right:-4px;bottom:-4px;width:16px;height:16px;border-radius:50%;background:var(--good);color:var(--surface);font-size:10px;font-weight:800;display:grid;place-items:center}
+.dot.out{opacity:.45}
+
+.btn{border:0;border-radius:12px;padding:13px 16px;font-weight:700;font-size:15px;background:var(--hibiscus);color:#fff;display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%}
+.btn.alt{background:var(--surface-2);color:var(--ink);border:1px solid var(--line)}
+.btn.lagoon{background:var(--lagoon)}
+.btn.small{padding:9px 12px;font-size:13.5px;width:auto;border-radius:10px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn:active{transform:translateY(1px)}
+
+/* Leaderboard */
+.board{display:flex;flex-direction:column;gap:8px}
+.row{display:grid;grid-template-columns:26px 44px 1fr auto;align-items:center;gap:10px;padding:10px 14px 10px 10px;background:var(--surface);border:1px solid var(--line);border-radius:14px;text-align:left;width:100%;position:relative}
+.row .pos{font-family:var(--f-mono);font-weight:600;font-size:15px;text-align:center;color:var(--muted)}
+.row .ava{width:44px;height:44px;border-radius:50%;background:var(--surface-2);display:grid;place-items:center;font-size:23px}
+.row .who{min-width:0}
+.row .who b{font-size:15.5px;display:flex;align-items:center;gap:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .who small{display:block;color:var(--muted);font-size:12px;margin-top:1px}
+.row .pct{font-weight:800;font-size:21px;font-variant-numeric:tabular-nums;text-align:right;line-height:1}
+.row .pct small{font-size:12px;font-weight:700;color:var(--muted);margin-left:1px}
+.row .pct em{display:block;font-style:normal;font-size:11px;font-weight:600;color:var(--muted);margin-top:4px}
+.row.you{border-color:var(--lagoon);box-shadow:0 0 0 1px var(--lagoon) inset}
+.row.r1{border-color:var(--gold);background:linear-gradient(100deg,color-mix(in srgb,var(--gold) 16%,var(--surface)),var(--surface) 60%)}
+.row.r1 .pos{color:var(--gold)}
+.row.r2 .pos{color:#9AA7AC}
+.row.r3 .pos{color:#C07A43}
+.row.r1 .ava{box-shadow:0 0 0 2px var(--gold),0 0 18px color-mix(in srgb,var(--gold) 55%,transparent)}
+.row.r2 .ava{box-shadow:0 0 0 2px #A9B5BA}
+.row.r3 .ava{box-shadow:0 0 0 2px #C07A43}
+.mv{font-family:var(--f-mono);font-size:11px;font-weight:600}
+.mv.up{color:var(--good)}.mv.down{color:var(--bad)}
+.yline{display:flex;align-items:center;gap:10px;margin:6px 0;color:var(--ink);font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+.yline::before,.yline::after{content:"";flex:1;height:4px;background:var(--yellow);border-radius:2px;box-shadow:0 0 10px color-mix(in srgb,var(--yellow) 60%,transparent)}
+.below{opacity:.88}
+
+.note{font-size:13px;color:var(--muted);background:var(--surface-2);border-radius:12px;padding:12px 14px;border:1px solid var(--line)}
+.note b{color:var(--ink)}
+.invite{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 16px}
+.invite .code{font-family:var(--f-mono);font-weight:600;font-size:20px;letter-spacing:.05em}
+.invite > div{flex:1;min-width:0}
+.invite small{color:var(--muted);font-size:12.5px;display:block}
+
+/* Cards / forms */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.card h3{margin:0;font-size:17px}
+.card p{margin:0}
+.muted{color:var(--muted)}
+label.f{display:flex;flex-direction:column;gap:6px;font-weight:600;font-size:13.5px}
+.input{border:1.5px solid var(--line);background:var(--surface-2);border-radius:12px;padding:12px 14px;font-size:16px;width:100%}
+.input:focus{border-color:var(--lagoon);outline:none}
+.kg{position:relative}
+.kg .input{font-size:40px;font-weight:800;text-align:center;padding:14px 50px;font-variant-numeric:tabular-nums}
+.kg span{position:absolute;right:18px;top:50%;transform:translateY(-50%);color:var(--muted);font-weight:700}
+.lock{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;color:var(--muted)}
+.warn{background:color-mix(in srgb,var(--sunset) 14%,var(--surface));border:1px solid color-mix(in srgb,var(--sunset) 45%,transparent);border-radius:12px;padding:10px 12px;font-size:13.5px}
+.err{color:var(--bad);font-size:13px;font-weight:600}
+.big-result{font-size:56px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;text-align:center;letter-spacing:-.02em}
+.big-result.loss{color:var(--good)}.big-result.gain{color:var(--bad)}
+.center{text-align:center}
+.pill{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line)}
+.pill.flag{background:color-mix(in srgb,var(--sunset) 18%,var(--surface));border-color:color-mix(in srgb,var(--sunset) 50%,transparent)}
+
+/* Banter */
+.chal{background:linear-gradient(135deg,var(--lagoon),color-mix(in srgb,var(--lagoon) 55%,var(--sunset)));color:#fff;border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.chal .lbl{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;opacity:.85}
+.chal h3{margin:0;font-size:19px}
+.days{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.day{border:0;border-radius:10px;padding:8px 0;background:#ffffff26;color:#fff;font-size:11px;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:2px}
+.day.on{background:#fff;color:var(--lagoon)}
+.day.on::after{content:"✓";font-size:12px}
+.day:not(.on)::after{content:"·";font-size:12px;opacity:.7}
+.chal small{opacity:.9;font-size:12.5px}
+.compose{display:flex;gap:8px}
+.compose .input{font-size:15px;padding:11px 14px}
+.feed{display:flex;flex-direction:column;gap:10px}
+.post{display:grid;grid-template-columns:38px 1fr;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px}
+.post .ava{width:38px;height:38px;border-radius:50%;background:var(--surface-2);display:grid;place-items:center;font-size:19px}
+.post.sys{background:var(--surface-2)}
+.post.sys .ava{background:var(--pass-bg);color:var(--pass-ink);font-size:16px}
+.post .meta{font-size:12px;color:var(--muted);display:flex;gap:6px}
+.post .meta b{color:var(--ink)}
+.post p{margin:2px 0 8px;overflow-wrap:anywhere}
+.reacts{display:flex;gap:6px;flex-wrap:wrap}
+.react{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:3px 9px;font-size:13px;display:inline-flex;gap:4px;align-items:center}
+.react.mine{border-color:var(--lagoon);background:color-mix(in srgb,var(--lagoon) 14%,var(--surface))}
+.react span{font-size:12px;font-weight:700;font-variant-numeric:tabular-nums}
+
+/* Me */
+.me-head{display:flex;gap:14px;align-items:center}
+.me-head .ava{width:64px;height:64px;border-radius:50%;background:var(--surface-2);display:grid;place-items:center;font-size:34px;flex:none}
+.me-head h3{font-size:20px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:var(--surface-2);border-radius:12px;padding:10px;text-align:center}
+.stat b{display:block;font-size:20px;font-variant-numeric:tabular-nums}
+.stat small{font-size:11.5px;color:var(--muted)}
+.badges{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.badge{background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:10px 6px;text-align:center;display:flex;flex-direction:column;gap:3px;align-items:center}
+.badge i{font-style:normal;font-size:26px}
+.badge b{font-size:12.5px;line-height:1.2}
+.badge small{font-size:10.5px;color:var(--muted);line-height:1.25}
+.badge.locked{opacity:.4;filter:grayscale(1)}
+.toggle-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
+.toggle-row:first-of-type{border-top:0}
+.toggle-row div{min-width:0}
+.toggle-row small{display:block;color:var(--muted);font-size:12px}
+.sw{width:48px;height:28px;border-radius:999px;background:var(--line);border:0;position:relative;flex:none;transition:background .2s}
+.sw::after{content:"";position:absolute;left:3px;top:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px #0004;transition:left .2s}
+.sw[aria-pressed="true"]{background:var(--good)}
+.sw[aria-pressed="true"]::after{left:23px}
+details.rules{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:4px 16px}
+details.rules summary{font-weight:700;padding:12px 0;cursor:pointer}
+details.rules ol{margin:0 0 14px;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:14px}
+.demo-tools{border:1.5px dashed var(--line);border-radius:16px;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.demo-tools h3{margin:0;font-size:13px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.tool-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.photo{aspect-ratio:3/4;max-width:100%;border-radius:12px;background:var(--surface-2);border:1.5px dashed var(--line);display:grid;place-items:center;overflow:hidden;color:var(--muted);font-size:12.5px;text-align:center;padding:8px}
+.photo img{width:100%;height:100%;object-fit:cover}
+.photos{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* Tab bar */
+.tabs{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(100%,480px);z-index:30;background:color-mix(in srgb,var(--surface) 92%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px))}
+.tab{background:none;border:0;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;font-weight:700;color:var(--muted);padding:6px 0;border-radius:10px;position:relative}
+.tab svg{width:24px;height:24px}
+.tab[aria-current="page"]{color:var(--hibiscus)}
+.tab .badge-dot{position:absolute;top:4px;right:calc(50% - 18px);width:9px;height:9px;border-radius:50%;background:var(--hibiscus);border:2px solid var(--surface)}
+
+/* Sheet */
+.scrim{position:fixed;inset:0;background:#0009;z-index:50;display:flex;align-items:flex-end;justify-content:center;animation:fade .2s}
+.sheet{background:var(--bg);width:min(100%,480px);max-height:88%;overflow:auto;border-radius:22px 22px 0 0;padding:10px 16px calc(24px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:14px;animation:up .28s cubic-bezier(.2,.8,.2,1)}
+.grab{width:40px;height:5px;border-radius:3px;background:var(--line);margin:0 auto 4px}
+.sheet-head{display:flex;align-items:center;gap:12px}
+.sheet-head .ava{width:56px;height:56px;border-radius:50%;background:var(--surface-2);display:grid;place-items:center;font-size:30px}
+.sheet-head h3{margin:0;font-size:20px}
+.sheet-head > div{flex:1}
+.chart{width:100%;height:auto;display:block}
+.wk-list{display:flex;flex-direction:column;font-size:14px}
+.wk-list div{display:flex;justify-content:space-between;padding:7px 0;border-top:1px solid var(--line);font-variant-numeric:tabular-nums}
+.steps{display:flex;flex-direction:column;gap:12px;margin:0;padding:0;list-style:none;counter-reset:s}
+.steps li{display:grid;grid-template-columns:30px 1fr;gap:10px;align-items:start;counter-increment:s}
+.steps li::before{content:counter(s);width:28px;height:28px;border-radius:50%;background:var(--lagoon);color:#fff;font-weight:800;display:grid;place-items:center;font-size:14px}
+
+/* Notification banner */
+.notifs{position:fixed;top:calc(8px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);width:min(calc(100% - 16px),440px);z-index:90;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.notif{pointer-events:auto;background:color-mix(in srgb,var(--surface) 88%,transparent);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--line);border-radius:20px;padding:11px 14px;display:grid;grid-template-columns:38px 1fr;gap:10px;box-shadow:0 12px 32px #0003;animation:drop .45s cubic-bezier(.2,1.2,.3,1)}
+.notif .app-ic{width:38px;height:38px;border-radius:9px;background:linear-gradient(140deg,var(--hibiscus),var(--sunset));display:grid;place-items:center;font-family:var(--f-display);color:#fff;font-size:15px}
+.notif .nt{display:flex;justify-content:space-between;font-size:13px}
+.notif .nt b{font-weight:700}
+.notif .nt span{color:var(--muted);font-size:12px}
+.notif p{margin:1px 0 0;font-size:13.5px}
+.notif.out{animation:rise .35s forwards}
+
+/* Overlays (reveal, final) */
+.stage{position:fixed;inset:0;z-index:70;background:var(--overlay);color:#F5EFE2;display:flex;flex-direction:column;align-items:center;overflow:auto;padding:calc(24px + env(safe-area-inset-top,0px)) 16px calc(24px + env(safe-area-inset-bottom,0px));animation:fade .3s}
+.stage-in{width:min(100%,440px);display:flex;flex-direction:column;gap:12px;align-items:stretch}
+.stage .kicker{font-family:var(--f-mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#F5BE4B;text-align:center}
+.stage h2{font-family:var(--f-display);font-weight:400;font-size:38px;line-height:1.05;margin:0;text-align:center;color:#fff}
+.stage .sub{text-align:center;color:#B9CDCF;font-size:14px;margin:0}
+.rv{display:grid;grid-template-columns:30px 40px 1fr auto;gap:10px;align-items:center;background:#ffffff12;border:1px solid #ffffff1f;border-radius:14px;padding:10px 14px 10px 10px;animation:slam .5s cubic-bezier(.2,1.4,.3,1)}
+.rv .ava{width:40px;height:40px;border-radius:50%;background:#ffffff1a;display:grid;place-items:center;font-size:21px}
+.rv .pos{font-family:var(--f-mono);font-weight:600;text-align:center;color:#B9CDCF}
+.rv b{font-size:16px;color:#fff}
+.rv small{display:block;font-size:12px;color:#B9CDCF}
+.rv .p{font-weight:800;font-size:22px;font-variant-numeric:tabular-nums;color:#7DEBC3}
+.rv .p.g{color:#FFA07A}.rv .p.m{color:#8EAAAE;font-size:14px}
+.rv.win{background:linear-gradient(100deg,#F5BE4B33,#ffffff10);border-color:#F5BE4B;box-shadow:0 0 30px #F5BE4B44}
+.rv.win .pos{color:#F5BE4B}
+.drum{font-size:44px;text-align:center;animation:shake .12s infinite}
+.stage .btn.alt{background:#ffffff1a;color:#fff;border-color:#ffffff33}
+.podium{display:grid;grid-template-columns:1fr 1.15fr 1fr;align-items:end;gap:8px;margin-top:6px}
+.pod{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}
+.pod .ava{width:56px;height:56px;border-radius:50%;background:#ffffff1a;display:grid;place-items:center;font-size:30px}
+.pod.p1 .ava{width:76px;height:76px;font-size:42px;box-shadow:0 0 0 3px #F5BE4B,0 0 40px #F5BE4B88}
+.pod .blk{width:100%;border-radius:12px 12px 4px 4px;background:#ffffff14;border:1px solid #ffffff22;display:flex;flex-direction:column;justify-content:flex-start;padding-top:8px;font-family:var(--f-mono);font-weight:600}
+.pod.p1 .blk{height:110px;background:linear-gradient(#F5BE4B55,#F5BE4B11);border-color:#F5BE4B}
+.pod.p2 .blk{height:80px}.pod.p3 .blk{height:60px}
+.pod b{font-size:14px;color:#fff}
+.pod small{font-size:12px;color:#B9CDCF}
+.fstats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.fstat{background:#ffffff10;border:1px solid #ffffff1f;border-radius:12px;padding:10px 12px}
+.fstat small{display:block;font-size:11.5px;color:#B9CDCF}
+.fstat b{font-size:15px;color:#fff}
+.potbig{font-family:var(--f-mono);font-weight:600;font-size:44px;color:#F5BE4B;text-align:center;line-height:1}
+
+/* Join screen */
+.join{min-height:100%;display:flex;flex-direction:column;gap:18px;padding:calc(28px + env(safe-area-inset-top,0px)) 16px calc(28px + env(safe-area-inset-bottom,0px));max-width:480px;margin:0 auto}
+.join-hero{text-align:center;display:flex;flex-direction:column;gap:6px;align-items:center}
+.join-hero .wordmark{font-size:44px;line-height:.95;flex:none}
+.join-hero p{margin:0;color:var(--muted);max-width:32ch}
+.emoji-pick{display:flex;flex-wrap:wrap;gap:8px}
+.emoji-pick button{width:44px;height:44px;border-radius:50%;border:2px solid var(--line);background:var(--surface);font-size:22px}
+.emoji-pick button[aria-pressed="true"]{border-color:var(--hibiscus);background:color-mix(in srgb,var(--hibiscus) 12%,var(--surface))}
+.check{display:flex;gap:10px;align-items:flex-start;font-size:14px}
+.check input{width:20px;height:20px;margin-top:1px;accent-color:var(--hibiscus);flex:none}
+
+canvas#fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:95}
+
+@keyframes fade{from{opacity:0}}
+@keyframes up{from{transform:translateY(40px);opacity:0}}
+@keyframes drop{from{transform:translateY(-120%);opacity:0}}
+@keyframes rise{to{transform:translateY(-130%);opacity:0}}
+@keyframes slam{from{transform:scale(1.25);opacity:0}}
+@keyframes shake{0%{transform:rotate(-6deg)}50%{transform:rotate(6deg)}}
+@keyframes pop{0%{transform:scale(.4);opacity:0}60%{transform:scale(1.12)}100%{transform:scale(1)}}
+.pop{animation:pop .6s cubic-bezier(.2,1.4,.3,1)}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div id="root"></div>
+<div class="notifs" id="notifs" aria-live="polite"></div>
+<canvas id="fx"></canvas>
+
+<script>
+/* ===================== Competition setup ===================== */
+const COMP = { name:'Bali Body Battle', code:'BALI-2026', entry:50, weeks:10, start:new Date(2026,9,11), teamGoal:8 };
+const DAY = 864e5;
+const weekDate = k => new Date(COMP.start.getTime() + k*7*DAY);
+const fmtDay = d => d.toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'});
+const FINAL = weekDate(COMP.weeks);
+
+/* Example players for the demo. Weights are only ever used to work out percentages. */
+const FAKES = [
+  {id:'mum',  name:'Mum',         emoji:'🌺'},
+  {id:'dad',  name:'Dad',         emoji:'🐢'},
+  {id:'jess', name:'Jess',        emoji:'🏄'},
+  {id:'tom',  name:'Tom',         emoji:'🥥'},
+  {id:'kerry',name:'Aunty Kerry', emoji:'🐬'},
+];
+const SCRIPT = {
+  mum:  [78.0,77.1,76.5,76.6,75.4,74.9,74.2,73.8,73.1,72.9,72.2],
+  dad:  [104.0,102.1,101.3,100.2,99.9,98.6,97.6,97.4,96.2,95.9,94.8],
+  jess: [66.0,65.4,65.1,64.3,64.4,63.6,63.1,62.4,62.5,61.7,61.0],
+  tom:  [92.0,90.4,90.9,89.8,88.5,88.3,87.0,86.1,85.9,84.8,84.0],
+  kerry:[85.0,84.6,83.9,null,82.7,82.0,null,80.9,80.1,79.6,78.8],
+};
+const YOU_EMOJIS = ['🐒','🦜','🌴','🍍','🐠','🦀','🌞','🍹','🛵','🌊'];
+const CHALLENGES = ['', 'Drink 2 litres of water a day','No soft drink week','Take the stairs every chance','No snacks after 8pm','Veg with every meal','10,000 steps every day','No takeaway week','Dry week: no alcohol until Sunday','30 minutes of movement daily','Final push: no sugar till weigh-in'];
+const HEALTHY_MAX = 1.5;
+
+const BADGES = [
+  {id:'first', i:'👣', n:'First Step',   d:'Logged a starting weight'},
+  {id:'one',   i:'🌱', n:'1% Down',      d:'Lost 1% of starting weight'},
+  {id:'five',  i:'🏅', n:'5% Club',      d:'Lost 5% of starting weight'},
+  {id:'ten',   i:'🏆', n:'10% Legend',   d:'Lost 10% of starting weight'},
+  {id:'fire',  i:'🔥', n:'On Fire',      d:'3 weeks of losses in a row'},
+  {id:'come',  i:'💪', n:'Comeback Kid', d:'Lost after a gain week'},
+  {id:'crown', i:'👑', n:'Crowned',      d:'Biggest loser of a week'},
+  {id:'steady',i:'🐢', n:'Steady Eddie', d:'4 healthy-pace weeks'},
+  {id:'attend',i:'📅', n:'Never Missed', d:'Every weigh-in, 4+ weeks'},
+];
+
+/* ===================== State ===================== */
+const KEY = 'bbb-demo-v1';
+let S = load();
+let ui = { tab: (S && S.tab) || 'board', sheet:null, confirmBig:false, pick:YOU_EMOJIS[0], joinErr:'', weighErr:'', peek:false };
+
+function load(){ try { const raw = localStorage.getItem(KEY); return raw ? JSON.parse(raw) : null; } catch(e){ return null; } }
+function save(){ try { if(S) localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} }
+const r1 = n => Math.round(n*10)/10;
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function freshState(you){
+  const players = FAKES.map(f => ({...f, joined:0, w: SCRIPT[f.id].slice(0,6).concat(Array(5).fill(null))}));
+  ['mum','dad','tom'].forEach(id => { const p = players.find(x=>x.id===id); p.w[6] = SCRIPT[id][6]; });
+  const mult = [1,.988,.981,.975,.972,.962];
+  players.push({ id:'you', name:you.name, emoji:you.emoji, joined:0, isYou:true, w: mult.map(m=>r1(you.start*m)).concat(Array(5).fill(null)) });
+  return {
+    v:1, week:6, revealed:5, players, seen:{}, photo:null, tab:'board',
+    settings:{ sound:true, notifs:false, n_weigh:true, n_overtake:true, n_results:true, n_badges:true, n_banter:false, n_countdown:true },
+    challenge:{ week:6, joined:true, days:[true,true,false,true,true,false,false], crew:['mum','kerry','tom'] },
+    feed:[
+      {id:'f7', type:'sys', text:'3 of 6 have weighed in for Week 6. Results tonight at 7pm.', time:'Sun 22 Nov, 3:40pm', r:{'⏰':2}},
+      {id:'f6', pid:'kerry', text:'Did 10k steps today in the rain. Respect please.', time:'Fri 20 Nov, 5:12pm', r:{'👏':3,'🔥':1}},
+      {id:'f5', pid:'jess', text:'Whoever brought Tim Tams to the BBQ, show yourself.', time:'Wed 18 Nov, 6:30pm', r:{'😂':4}},
+      {id:'f3', pid:'mum', text:'Enjoy it while it lasts.', time:'Sun 15 Nov, 7:06pm', r:{'🔥':2,'😂':1}},
+      {id:'f2', pid:'dad', text:'Crown looks good on me. Just saying.', time:'Sun 15 Nov, 7:04pm', r:{'😂':3}},
+      {id:'f4', type:'sys', text:'Tom earned On Fire 🔥 for 3 weeks of losses in a row.', time:'Sun 15 Nov, 7:01pm', r:{'👏':2}},
+      {id:'f1', type:'sys', text:'Week 5 results: Dad takes the crown 👑 with 1.30% lost. Below the yellow line: Jess and Aunty Kerry.', time:'Sun 15 Nov, 7:00pm', r:{'👏':4,'😱':1}},
+    ],
+    mine:{}
+  };
+}
+
+/* ===================== Scoring ===================== */
+const P = id => S.players.find(p=>p.id===id);
+const you = () => S.players.find(p=>p.isYou);
+function lastKnown(p, upto){ for(let k=upto;k>=p.joined;k--){ if(p.w[k]!=null) return p.w[k]; } return null; }
+function totalPct(p, upto=S.revealed){ const s=p.w[p.joined], c=lastKnown(p,upto); return (s==null||c==null)?0:(s-c)/s*100; }
+function weekPct(p, k){ if(k<=p.joined) return null; const c=p.w[k]; if(c==null) return null; const prev=lastKnown(p,k-1); return prev==null?null:(prev-c)/prev*100; }
+function standings(upto=S.revealed){
+  return S.players.filter(p=>p.joined<=upto)
+    .map(p=>({p, total:totalPct(p,upto)}))
+    .sort((a,b)=> b.total-a.total || a.p.name.localeCompare(b.p.name))
+    .map((x,i)=>({...x, rank:i+1}));
+}
+function weekWinner(k){ let best=null; S.players.forEach(p=>{ const w=weekPct(p,k); if(w!=null && (!best || w>best.w)) best={p,w}; }); return best; }
+function streak(p, upto=S.revealed){ let n=0; for(let k=upto;k>p.joined;k--){ const w=weekPct(p,k); if(w!=null && w>0) n++; else break; } return n; }
+function maxStreak(p, upto){ let m=0,n=0; for(let k=p.joined+1;k<=upto;k++){ const w=weekPct(p,k); if(w!=null&&w>0){n++;m=Math.max(m,n);} else n=0; } return m; }
+function crowns(p, upto=S.revealed){ let n=0; for(let k=1;k<=upto;k++){ const ww=weekWinner(k); if(ww && ww.p.id===p.id) n++; } return n; }
+function earned(p, upto=S.revealed){
+  const t = totalPct(p,upto), out = new Set(['first']);
+  if(t>=1) out.add('one'); if(t>=5) out.add('five'); if(t>=10) out.add('ten');
+  if(maxStreak(p,upto)>=3) out.add('fire');
+  let steady=0, missed=false, weeks=0;
+  for(let k=p.joined+1;k<=upto;k++){
+    weeks++;
+    const w=weekPct(p,k), pw=weekPct(p,k-1);
+    if(p.w[k]==null) missed=true;
+    if(w!=null && w>0 && pw!=null && pw<=0) out.add('come');
+    if(w!=null && w>=0.5 && w<=HEALTHY_MAX) steady++;
+  }
+  if(steady>=4) out.add('steady');
+  if(!missed && weeks>=4) out.add('attend');
+  if(crowns(p,upto)>0) out.add('crown');
+  return out;
+}
+const fmtPct = n => (Math.abs(n)<0.005?0:n).toFixed(2);
+const pctSigned = n => n==null ? '–' : (n>0?'−':n<0?'+':'±') + Math.abs(n).toFixed(2) + '%';
+const daysToFinal = () => Math.max(0, Math.round((FINAL - weekDate(S.week))/DAY));
+const pot = () => S.players.length * COMP.entry;
+const finished = () => S.revealed >= COMP.weeks;
+function teamPct(upto=S.revealed){ let s=0,c=0; S.players.forEach(p=>{ const a=p.w[p.joined], b=lastKnown(p,upto); if(a!=null&&b!=null){s+=a;c+=b;} }); return s? (s-c)/s*100 : 0; }
+const nowLabel = () => `${fmtDay(weekDate(S.week))}, ${S.revealed>=S.week? '7:30pm':'4:12pm'}`;
+
+/* ===================== Sound (synthesised, no files) ===================== */
+let AC=null;
+function ac(){ if(!S || !S.settings.sound) return null; try{ if(!AC){ const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; AC=new C(); } if(AC.state==='suspended') AC.resume(); return AC; }catch(e){ return null; } }
+document.addEventListener('pointerdown', ()=>{ try{ if(S && S.settings.sound) ac(); }catch(e){} }, {once:true});
+function env(ctx, node, t, a, peak, d){ const g=ctx.createGain(); g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(peak,t+a); g.gain.exponentialRampToValueAtTime(0.0001,t+a+d); node.connect(g); g.connect(ctx.destination); return g; }
+function osc(ctx, type, f, t, a, peak, d){ const o=ctx.createOscillator(); o.type=type; o.frequency.setValueAtTime(f,t); env(ctx,o,t,a,peak,d); o.start(t); o.stop(t+a+d+.05); return o; }
+let NB=null;
+function noise(ctx, t, dur, peak, filterType, freq, q=1){ if(!NB){ NB=ctx.createBuffer(1,ctx.sampleRate*2,ctx.sampleRate); const d=NB.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1; } const s=ctx.createBufferSource(); s.buffer=NB; const f=ctx.createBiquadFilter(); f.type=filterType; f.frequency.value=freq; f.Q.value=q; s.connect(f); env(ctx,f,t,.003,peak,dur); s.start(t); s.stop(t+dur+.05); }
+const SFX = {
+  chaching(){ const c=ac(); if(!c) return; const t=c.currentTime+.02;
+    noise(c,t,.05,.35,'bandpass',2800,2); noise(c,t+.06,.04,.25,'bandpass',4200,3);
+    [[2637,.0],[3951,.0],[3136,.16],[4699,.16]].forEach(([f,o])=>{ osc(c,'sine',f,t+.1+o,.004,.18,.9); osc(c,'triangle',f*2.01,t+.1+o,.004,.04,.4); });
+    noise(c,t+.1,.5,.06,'highpass',7000); },
+  trombone(){ const c=ac(); if(!c) return; const t=c.currentTime+.02;
+    const lp=c.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=1100; lp.connect(c.destination);
+    [[233.1,0,.42],[220,.48,.42],[207.7,.96,.42],[196,1.44,1.3]].forEach(([f,o,d],i)=>{ const os=c.createOscillator(); os.type='sawtooth'; os.frequency.setValueAtTime(f,t+o);
+      const g=c.createGain(); g.gain.setValueAtTime(.0001,t+o); g.gain.exponentialRampToValueAtTime(.14,t+o+.05); g.gain.setValueAtTime(.14,t+o+d-.1); g.gain.exponentialRampToValueAtTime(.0001,t+o+d);
+      if(i===3){ const l=c.createOscillator(), lg=c.createGain(); l.frequency.value=5.5; lg.gain.value=5; l.connect(lg); lg.connect(os.frequency); l.start(t+o+.25); l.stop(t+o+d); }
+      os.connect(g); g.connect(lp); os.start(t+o); os.stop(t+o+d+.05); }); },
+  tick(){ const c=ac(); if(!c) return; const t=c.currentTime+.01; osc(c,'triangle',880,t,.004,.16,.12); noise(c,t,.05,.12,'bandpass',180,1.2); },
+  blip(){ const c=ac(); if(!c) return; const t=c.currentTime+.01; osc(c,'sine',660,t,.005,.14,.18); },
+  notify(){ const c=ac(); if(!c) return; const t=c.currentTime+.01; osc(c,'sine',1046.5,t,.005,.12,.22); osc(c,'sine',1568,t+.11,.005,.12,.35); },
+  drumroll(sec){ const c=ac(); if(!c) return; const t=c.currentTime+.02; const n=Math.floor(sec/.045); for(let i=0;i<n;i++){ const p=.05+.22*(i/n); noise(c,t+i*.045+Math.random()*.006,.06,p,'bandpass',1900,.8); } },
+  crash(){ const c=ac(); if(!c) return; const t=c.currentTime+.01; noise(c,t,1.6,.35,'highpass',5200); noise(c,t,.25,.4,'lowpass',160); },
+  fanfare(){ const c=ac(); if(!c) return; const t=c.currentTime+.02;
+    [[523.3,0,.14],[659.3,.13,.14],[784,.26,.14],[1046.5,.4,.9]].forEach(([f,o,d])=>{ osc(c,'triangle',f,t+o,.01,.2,d); osc(c,'square',f,t+o,.01,.03,d*.7); });
+    [523.3,659.3,784].forEach(f=>osc(c,'triangle',f,t+.4,.02,.08,1.1)); },
+};
+
+/* ===================== Confetti ===================== */
+const fx = document.getElementById('fx'), fxc = fx.getContext('2d');
+let parts=[], fxRun=false;
+const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+function confetti(n=140, spread=1){
+  if(reduced()) return;
+  const cs=getComputedStyle(document.documentElement);
+  const cols=['--hibiscus','--sunset','--gold','--lagoon','--yellow','--good'].map(v=>cs.getPropertyValue(v).trim()||'#f0a');
+  const dpr=Math.min(window.devicePixelRatio||1,2); fx.width=innerWidth*dpr; fx.height=innerHeight*dpr; fxc.setTransform(dpr,0,0,dpr,0,0);
+  for(let i=0;i<n;i++){ const a=-Math.PI/2+(Math.random()-.5)*1.6*spread, v=8+Math.random()*9;
+    parts.push({x:innerWidth/2+(Math.random()-.5)*80, y:innerHeight*.62, vx:Math.cos(a)*v, vy:Math.sin(a)*v, r:Math.random()*6, vr:(Math.random()-.5)*.4, w:6+Math.random()*6, h:8+Math.random()*8, c:cols[i%cols.length], s:Math.random()<.25?'o':'r', life:0}); }
+  if(!fxRun){ fxRun=true; requestAnimationFrame(stepFx); }
+}
+function stepFx(){
+  fxc.clearRect(0,0,innerWidth,innerHeight);
+  parts.forEach(p=>{ p.vy+=.32; p.vx*=.99; p.vy*=.99; p.x+=p.vx; p.y+=p.vy; p.r+=p.vr; p.life++;
+    fxc.save(); fxc.translate(p.x,p.y); fxc.rotate(p.r); fxc.fillStyle=p.c;
+    if(p.s==='o'){ fxc.beginPath(); fxc.arc(0,0,p.w/2,0,7); fxc.fill(); } else fxc.fillRect(-p.w/2,-p.h/4,p.w,p.h/2*Math.abs(Math.cos(p.life*.15))+1);
+    fxc.restore(); });
+  parts=parts.filter(p=>p.y<innerHeight+40 && p.life<400);
+  if(parts.length) requestAnimationFrame(stepFx); else { fxRun=false; fxc.clearRect(0,0,innerWidth,innerHeight); }
+}
+
+/* ===================== Push-style notifications (simulated) ===================== */
+function notify(title, body){
+  const box=document.getElementById('notifs');
+  const el=document.createElement('div'); el.className='notif'; el.setAttribute('role','status');
+  el.innerHTML=`<div class="app-ic">B</div><div><div class="nt"><b>${esc(title)}</b><span>now</span></div><p>${esc(body)}</p></div>`;
+  box.prepend(el); SFX.notify();
+  const close=()=>{ el.classList.add('out'); setTimeout(()=>el.remove(),350); };
+  el.addEventListener('click',close); setTimeout(close,5200);
+}
+
+/* ===================== Icons ===================== */
+const IC = {
+  board:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4Z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg>',
+  weigh:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="4"/><path d="M8 10a4 4 0 0 1 8 0"/><path d="m12 10 1.5-2"/></svg>',
+  banter:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"/></svg>',
+  me:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
+};
+
+/* ===================== Render ===================== */
+const root = document.getElementById('root');
+function render(){
+  if(!S){ root.innerHTML = joinView(); return; }
+  S.tab = ui.tab; save();
+  const yw = you().w[S.week];
+  const needWeigh = !finished() && S.revealed < S.week && yw==null;
+  root.innerHTML = `<div class="app">
+    <header class="top">
+      <h1 class="wordmark">Bali Body Battle</h1>
+      <span class="demo-chip" title="Demo clock">Demo · ${esc(fmtDay(weekDate(S.week)))}</span>
+      <button class="icon-btn" data-a="sound" aria-label="${S.settings.sound?'Mute sound effects':'Turn on sound effects'}">${S.settings.sound?'🔊':'🔇'}</button>
+    </header>
+    <main class="view" id="view">${ ui.tab==='board'?boardView(): ui.tab==='weigh'?weighView(): ui.tab==='banter'?banterView(): meView() }</main>
+    <nav class="tabs" aria-label="Sections">
+      ${tabBtn('board','Leaderboard')}${tabBtn('weigh','Weigh in', needWeigh)}${tabBtn('banter','Banter')}${tabBtn('me','Me')}
+    </nav>
+    ${ui.sheet? sheetView(): ''}
+  </div>`;
+}
+const tabBtn = (id,label,dot) => `<button class="tab" data-a="tab" data-v="${id}" ${ui.tab===id?'aria-current="page"':''}>${IC[id]}${label}${dot?'<i class="badge-dot"></i>':''}</button>`;
+
+/* ---------- Join ---------- */
+function joinView(){
+  return `<form class="join" id="joinForm" novalidate>
+    <div class="join-hero">
+      <div style="font-size:44px">🌴</div>
+      <h1 class="wordmark">Bali Body Battle</h1>
+      <p>Ten weeks. Six (or more) family members. One pot. Last weigh-in Sunday 20 December, then we fly.</p>
+    </div>
+    <div class="card">
+      <label class="f" for="jCode">Join code
+        <input class="input" id="jCode" autocomplete="off" autocapitalize="characters" placeholder="BALI-2026" value="BALI-2026" style="font-family:var(--f-mono);letter-spacing:.06em">
+      </label>
+      <label class="f" for="jName">Your name (as the family knows you)
+        <input class="input" id="jName" maxlength="20" placeholder="e.g. Lee" autocomplete="given-name">
+      </label>
+      <div class="f" style="display:flex;flex-direction:column;gap:6px;font-weight:600;font-size:13.5px">Pick your avatar
+        <div class="emoji-pick" role="group" aria-label="Avatar">${YOU_EMOJIS.map(e=>`<button type="button" data-a="pick" data-v="${e}" aria-pressed="${ui.pick===e}">${e}</button>`).join('')}</div>
+      </div>
+      <label class="f" for="jWeight">Starting weight
+        <div class="kg"><input class="input" id="jWeight" type="number" inputmode="decimal" step="0.1" min="30" max="300" placeholder="0.0"><span>kg</span></div>
+      </label>
+      <div class="lock">🔒 <span>Nobody ever sees your weight. The app only shares the percentage you've lost.</span></div>
+      <label class="check" for="jPay"><input type="checkbox" id="jPay"> <span>I'm in for the <b>$${COMP.entry} entry</b>. Winner takes the whole pot.</span></label>
+      ${ui.joinErr?`<div class="err" role="alert">${esc(ui.joinErr)}</div>`:''}
+      <button class="btn" type="submit">Join the battle</button>
+    </div>
+    <p class="note"><b>Demo mode.</b> You'll join 5 example family members partway through, on Week 6, so you can try the weigh-in, the Sunday reveal and the final celebration. Nothing leaves this phone.</p>
+  </form>`;
+}
+
+/* ---------- Leaderboard ---------- */
+function passView(){
+  const team = teamPct(), pos = Math.min(team/COMP.teamGoal,1)*100;
+  const dLeft = daysToFinal();
+  return `<section class="pass" aria-label="Competition summary">
+    <div class="pass-main">
+      <div><div class="lbl">From</div><div class="code">HOME</div></div>
+      <div class="mid" aria-hidden="true">✈</div>
+      <div class="to"><div class="lbl">To · Denpasar</div><div class="code">DPS</div></div>
+    </div>
+    <div class="pass-track" aria-hidden="true"><div class="rail"></div><div class="done" style="width:${pos}%"></div><div class="plane" style="left:clamp(10px,${pos}%,calc(100% - 10px))">✈️</div></div>
+    <div class="pass-note">Team Bali has lost <b class="num">${fmtPct(team)}%</b> together. Goal: ${COMP.teamGoal}% by touchdown.</div>
+    <div class="pass-stub">
+      <div><div class="lbl">Prize pot</div><div class="v pot num">$${pot()}</div></div>
+      <div><div class="lbl">Week</div><div class="v num">${Math.min(S.week,COMP.weeks)}/${COMP.weeks}</div></div>
+      <div><div class="lbl">Final weigh-in</div><div class="v num">${finished()?'Done':dLeft+' days'}</div></div>
+    </div>
+  </section>`;
+}
+function weekBanner(){
+  if(finished()) return `<section class="week"><div class="week-head"><b>The battle is over 🌴</b><span>See you in Bali</span></div><button class="btn" data-a="final">Replay the final reveal</button></section>`;
+  const pending = S.revealed < S.week;
+  const inCount = S.players.filter(p=>p.w[S.week]!=null).length;
+  const yIn = you().w[S.week]!=null;
+  const isFinal = S.week===COMP.weeks;
+  return `<section class="week">
+    <div class="week-head"><b>${isFinal?'Final weigh-in':'Week '+S.week+' weigh-in'}</b><span>${esc(fmtDay(weekDate(S.week)))} · reveal 7pm</span></div>
+    <div class="dots" aria-label="${inCount} of ${S.players.length} weighed in">${S.players.map(p=>`<span class="dot ${p.w[S.week]!=null?'in':''}" title="${esc(p.name)}">${p.emoji}</span>`).join('')}</div>
+    <div class="muted" style="font-size:13px"><b style="color:var(--ink)">${inCount} of ${S.players.length}</b> weighed in. Results stay secret until the reveal.</div>
+    ${!yIn ? `<button class="btn" data-a="tab" data-v="weigh">Weigh in now</button>`
+           : `<button class="btn lagoon" data-a="reveal">${isFinal?'Run the final reveal':'Run tonight’s reveal'} <small style="opacity:.8;font-weight:600">(demo)</small></button>`}
+  </section>`;
+}
+function boardView(){
+  const st = standings(), prev = S.revealed>0 ? standings(S.revealed-1) : [];
+  const prevRank = Object.fromEntries(prev.map(x=>[x.p.id,x.rank]));
+  const ww = weekWinner(S.revealed);
+  const n = st.length, lineAt = n>=4 ? n-2 : -1;
+  const last = st[n-1];
+  let rows = '';
+  st.forEach((x,i)=>{
+    if(i===lineAt) rows += `<div class="yline" role="separator">Yellow line</div>`;
+    const p=x.p, mv = prevRank[p.id] ? prevRank[p.id]-x.rank : 0;
+    const s = streak(p), wk = weekPct(p,S.revealed);
+    const tags = `${ww && ww.p.id===p.id?'<span title="Biggest loser of the week">👑</span>':''}${s>=3?`<span title="${s} week streak">🔥${s}</span>`:''}`;
+    const sub = [ mv>0?`<span class="mv up">▲${mv}</span>`:mv<0?`<span class="mv down">▼${-mv}</span>`:'', S.revealed<S.week && p.w[S.week]!=null ? '✓ weighed in' : '', p.isYou?'You':'' ].filter(Boolean).join(' · ');
+    rows += `<button class="row r${x.rank} ${p.isYou?'you':''} ${i>=lineAt&&lineAt>=0?'below':''}" data-a="player" data-v="${p.id}">
+      <span class="pos">${x.rank}</span><span class="ava">${p.emoji}</span>
+      <span class="who"><b>${esc(p.name)} ${tags}</b><small>${sub||'&nbsp;'}</small></span>
+      <span class="pct">${fmtPct(x.total)}<small>%</small><em>${wk==null?'missed wk '+S.revealed:pctSigned(wk)+' wk'}</em></span>
+    </button>`;
+  });
+  return `${passView()}${weekBanner()}
+    <h2 class="sec">Leaderboard <small>after Week ${S.revealed} · % of starting weight lost</small></h2>
+    <div class="board">${rows}</div>
+    <p class="note">🍹 <b>Cocktail duty:</b> whoever finishes last buys the first round in Bali.${!finished()?` Right now that's <b>${esc(last.p.isYou?'you':last.p.name)}</b>.`:''}</p>
+    <section class="invite"><div><small>Invite family · they join themselves</small><div class="code">${COMP.code}</div></div><button class="btn small alt" data-a="copy">Copy invite</button></section>`;
+}
+
+/* ---------- Weigh in ---------- */
+function weighView(){
+  const me = you(), k = S.week;
+  if(finished()) return `<div class="card center"><div style="font-size:48px">🏝️</div><h3>That's a wrap</h3><p class="muted">The final weigh-in is done. Pack the sunscreen.</p><button class="btn" data-a="final">See the final results</button></div>`;
+  if(me.w[k]!=null){
+    const w = weekPct(me,k), flag = w!=null && w>HEALTHY_MAX;
+    const cls = w>0?'loss':w<0?'gain':'';
+    return `<div class="card center">
+      <div class="lbl muted" style="font-family:var(--f-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase">Week ${k} · locked in</div>
+      <div class="big-result ${cls} pop">${pctSigned(w)}</div>
+      <p>${w>0? (flag?'Big drop! Steady on, though.':'Nice work. That’s a loss.') : w<0?'Small gain this week. Plenty of time to bounce back.':'Holding steady.'}</p>
+      ${flag?`<div class="warn">More than ${HEALTHY_MAX}% in a week is fast. Make sure you're eating enough. Bali's not worth fainting at the airport.</div>`:''}
+      <p class="muted" style="font-size:13px">Only you can see this until the reveal at 7pm. Everyone else sees your new total then.</p>
+      <button class="btn lagoon" data-a="reveal">${k===COMP.weeks?'Run the final reveal':'Run tonight’s reveal'} (demo)</button>
+    </div>`;
+  }
+  const lk = lastKnown(me,k-1);
+  return `<form class="card" id="weighForm" novalidate>
+    <div><h3>${k===COMP.weeks?'Final weigh-in 🏁':'Week '+k+' weigh-in'}</h3><p class="muted" style="font-size:13.5px">${esc(fmtDay(weekDate(k)))}. Weigh first thing in the morning, same scales, before breakfast.</p></div>
+    <label class="f" for="wIn">Today's weight
+      <div class="kg"><input class="input" id="wIn" type="number" inputmode="decimal" step="0.1" min="30" max="300" placeholder="${lk!=null?lk.toFixed(1):'0.0'}"><span>kg</span></div>
+    </label>
+    <div class="lock">🔒 <span>Private. Last time you logged <b>${lk!=null?lk.toFixed(1)+' kg':'nothing'}</b>. Only you ever see kilos; everyone else sees percentages.</span></div>
+    ${ui.weighErr?`<div class="${ui.confirmBig?'warn':'err'}" role="alert">${esc(ui.weighErr)}</div>`:''}
+    <button class="btn" type="submit">${ui.confirmBig?'Yes, that’s right':'Lock it in'}</button>
+  </form>
+  <div class="note">🔔 We'll remind you at 8am on weigh-in Sunday, and ping again at 5pm if you haven't logged it.</div>`;
+}
+
+/* ---------- Banter ---------- */
+function banterView(){
+  const c = S.challenge, k = Math.min(S.week,COMP.weeks);
+  const crew = [...(c.joined?['you']:[]), ...c.crew].map(id=>P(id)).filter(Boolean);
+  const days = ['M','T','W','T','F','S','S'];
+  const feed = S.feed.map(f=>{
+    const p = f.pid?P(f.pid):null;
+    const rx = ['👏','🔥','😂','😱','🍹'].map(e=>{ const n=(f.r[e]||0); const mine=S.mine[f.id+e]; return `<button class="react ${mine?'mine':''}" data-a="react" data-v="${f.id}" data-e="${e}" aria-pressed="${!!mine}">${e}${n?`<span>${n}</span>`:''}</button>`; }).join('');
+    return `<article class="post ${f.type==='sys'?'sys':''}">
+      <div class="ava">${f.type==='sys'?'🏝':p?p.emoji:'🙂'}</div>
+      <div style="min-width:0"><div class="meta"><b>${f.type==='sys'?'Battle HQ':esc(p?p.name:'Someone')}</b><span>${esc(f.time)}</span></div><p>${esc(f.text)}</p><div class="reacts">${rx}</div></div>
+    </article>`;
+  }).join('');
+  return `<section class="chal">
+      <div class="lbl">Week ${k} mini-challenge · optional</div>
+      <h3>${esc(CHALLENGES[k]||CHALLENGES[6])}</h3>
+      ${c.joined?`<div class="days" role="group" aria-label="Days completed">${days.map((d,i)=>`<button class="day ${c.days[i]?'on':''}" data-a="day" data-v="${i}" aria-pressed="${c.days[i]}">${d}</button>`).join('')}</div>`
+        :`<button class="btn small" style="background:#fff;color:var(--lagoon);align-self:flex-start" data-a="joinchal">I'm in</button>`}
+      <small>${crew.map(p=>p.emoji).join(' ')} ${crew.length} doing it this week${c.joined?` · you've ticked off ${c.days.filter(Boolean).length} of 7 days`:''}</small>
+    </section>
+    <form class="compose" id="postForm"><input class="input" id="postIn" maxlength="200" placeholder="Talk some trash…" autocomplete="off"><button class="btn small" type="submit">Post</button></form>
+    <div class="feed">${feed}</div>`;
+}
+
+/* ---------- Me ---------- */
+function meView(){
+  const me = you(), st = standings(), mine = st.find(x=>x.p.id===me.id);
+  const got = earned(me);
+  const s = S.settings;
+  const lk = lastKnown(me,S.week), start = me.w[me.joined];
+  const tg = (key,label,hint) => `<div class="toggle-row"><div>${label}<small>${hint}</small></div><button class="sw" data-a="set" data-v="${key}" aria-pressed="${!!s[key]}" aria-label="${label}"></button></div>`;
+  return `<section class="card">
+      <div class="me-head"><div class="ava">${me.emoji}</div><div><h3>${esc(me.name)}</h3><div class="muted" style="font-size:13.5px">Joined Week ${me.joined} · $${COMP.entry} entry paid</div></div></div>
+      <div class="stats"><div class="stat"><b>${mine.rank}<small style="font-size:12px">/${st.length}</small></b><small>Rank</small></div><div class="stat"><b>${fmtPct(mine.total)}%</b><small>Lost</small></div><div class="stat"><b>${streak(me)}${streak(me)>=3?'🔥':''}</b><small>Week streak</small></div></div>
+      <button class="btn alt small" data-a="peek" style="align-self:flex-start">${ui.peek?'Hide my kilos':'🔒 Show my kilos (only you)'}</button>
+      ${ui.peek?`<div class="note num">Started <b>${start.toFixed(1)} kg</b> · latest <b>${lk.toFixed(1)} kg</b> · down <b>${(start-lk).toFixed(1)} kg</b></div>`:''}
+    </section>
+    <h2 class="sec">Badges <small>${got.size} of ${BADGES.length}</small></h2>
+    <div class="badges">${BADGES.map(b=>`<div class="badge ${got.has(b.id)?'':'locked'}"><i>${b.i}</i><b>${b.n}</b><small>${b.d}</small></div>`).join('')}</div>
+    <h2 class="sec">Before &amp; after <small>private · this phone only</small></h2>
+    <section class="card">
+      <div class="photos">
+        <label class="photo" for="photoIn">${S.photo?`<img src="${S.photo}" alt="Your before photo">`:'＋ Add a before photo'}</label>
+        <div class="photo">After photo unlocks<br>Sun 20 Dec 🏁</div>
+      </div>
+      <input type="file" id="photoIn" accept="image/*" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none">
+    </section>
+    <h2 class="sec">Notifications</h2>
+    <section class="card" style="gap:0">
+      ${s.notifs?'':`<button class="btn" data-a="guide" style="margin-bottom:10px">🔔 Turn on notifications</button>`}
+      ${tg('n_weigh','Weigh-in reminders','Sunday 8am, plus 5pm if you haven’t logged')}
+      ${tg('n_results','Results are in','Sunday 7pm reveal')}
+      ${tg('n_overtake','Someone passes you','“Tom just jumped ahead of you”')}
+      ${tg('n_badges','Badges and crowns','When you or anyone earns one')}
+      ${tg('n_countdown','Bali countdown','30, 14, 7 and 1 day to go')}
+      ${tg('n_banter','Banter posts','Every new message in the feed')}
+    </section>
+    <details class="rules"><summary>How it works</summary><ol>
+      <li>Everyone pays a $${COMP.entry} entry. Winner takes the whole pot ($${pot()} right now).</li>
+      <li>Score = % of your own starting weight lost, so it's fair at any size.</li>
+      <li>Weigh in every Sunday before 7pm. Results are revealed at 7pm.</li>
+      <li>Miss a weigh-in and your score stays where it was.</li>
+      <li>Biggest % loss each week wears the 👑 for seven days.</li>
+      <li>Bottom two on the leaderboard sit below the yellow line. It's just bragging rights.</li>
+      <li>Weekly drops over ${HEALTHY_MAX}% get a "steady on" warning.</li>
+      <li>Late joiners are measured from their own start.</li>
+      <li>Final weigh-in Sunday 20 December. Last place buys the first round in Bali 🍹.</li>
+    </ol></details>
+    <section class="demo-tools"><h3>Demo controls</h3>
+      <div class="tool-grid">
+        <button class="btn alt small" data-a="ntest" data-v="weigh">Test: reminder</button>
+        <button class="btn alt small" data-a="ntest" data-v="overtake">Test: overtake</button>
+        <button class="btn alt small" data-a="ntest" data-v="results">Test: results</button>
+        <button class="btn alt small" data-a="ntest" data-v="countdown">Test: countdown</button>
+        <button class="btn alt small" data-a="sfx" data-v="chaching">Sound: cha-ching</button>
+        <button class="btn alt small" data-a="sfx" data-v="trombone">Sound: sad trombone</button>
+      </div>
+      <button class="btn alt" data-a="final">Preview the 20 Dec final reveal</button>
+      <button class="btn alt" data-a="reset" style="color:var(--bad)">${ui.confirmReset?'Tap again to wipe the demo':'Start the demo again'}</button>
+    </section>`;
+}
+
+/* ---------- Sheets ---------- */
+function sheetView(){
+  let inner='';
+  if(ui.sheet.type==='player'){
+    const p = P(ui.sheet.id), st = standings(), me = st.find(x=>x.p.id===p.id), got = earned(p);
+    let wk=''; for(let k=S.revealed;k>p.joined;k--){ const w=weekPct(p,k); const ww=weekWinner(k);
+      wk += `<div><span>Week ${k} ${ww&&ww.p.id===p.id?'👑':''}</span><span>${w==null?'<span class="muted">missed</span>':`<b style="color:${w>0?'var(--good)':w<0?'var(--bad)':'var(--muted)'}">${pctSigned(w)}</b>${w>HEALTHY_MAX?' <span class="pill flag">steady on</span>':''}`}</span></div>`; }
+    inner = `<div class="sheet-head"><div class="ava">${p.emoji}</div><div><h3>${esc(p.name)}${p.isYou?' (you)':''}</h3><div class="muted" style="font-size:13.5px">Rank ${me.rank} of ${st.length} · ${crowns(p)} crown${crowns(p)===1?'':'s'} · streak ${streak(p)}</div></div><div class="big-result loss" style="font-size:30px">${fmtPct(me.total)}%</div></div>
+      ${chartSVG(p)}
+      <div class="badges">${BADGES.filter(b=>got.has(b.id)).map(b=>`<div class="badge"><i>${b.i}</i><b>${b.n}</b></div>`).join('')}</div>
+      <div class="wk-list">${wk}<div><span>Start</span><span class="muted">Week ${p.joined} · weight hidden</span></div></div>
+      ${p.isYou?'':`<div><div class="muted" style="font-size:13px;margin-bottom:6px">Send ${esc(p.name)} a reaction</div><div class="reacts">${['👏','🔥','😂','😱','🍹'].map(e=>`<button class="react" style="font-size:20px;padding:6px 12px" data-a="cheer" data-v="${p.id}" data-e="${e}">${e}</button>`).join('')}</div></div>`}`;
+  } else if(ui.sheet.type==='guide'){
+    inner = `<h3 style="margin:0;font-size:20px">Turn on notifications</h3>
+      <p class="muted" style="margin:0">On iPhone, notifications only work once the app is on your Home Screen (iOS 16.4 or later).</p>
+      <ol class="steps">
+        <li><div><b>Open the invite link in Safari</b><br><span class="muted">Not inside Messenger or Instagram.</span></div></li>
+        <li><div><b>Tap Share</b> <span aria-hidden="true">⬆️</span><br><span class="muted">The square with the arrow at the bottom of the screen.</span></div></li>
+        <li><div><b>Tap “Add to Home Screen”</b><br><span class="muted">Scroll down the list if you can't see it.</span></div></li>
+        <li><div><b>Open Bali Body Battle from your Home Screen</b><br><span class="muted">Then tap “Turn on notifications” and choose Allow.</span></div></li>
+      </ol>
+      <button class="btn" data-a="allow">Done. Send me a test notification</button>`;
+  }
+  return `<div class="scrim" data-a="close"><div class="sheet" role="dialog" aria-modal="true" data-stop="1"><div class="grab"></div>${inner}<button class="btn alt" data-a="close">Close</button></div></div>`;
+}
+function chartSVG(p){
+  const W=340,H=150,L=36,R=12,T=12,B=24, iw=W-L-R, ih=H-T-B;
+  const pts=[]; for(let k=p.joined;k<=S.revealed;k++) pts.push([k,totalPct(p,k)]);
+  const mx=Math.max(4,Math.ceil(Math.max(...pts.map(x=>x[1]))+1));
+  const X=k=>L+k/COMP.weeks*iw, Y=v=>T+ih-(Math.max(v,0)/mx)*ih;
+  const line=pts.map((q,i)=>`${i?'L':'M'}${X(q[0]).toFixed(1)},${Y(q[1]).toFixed(1)}`).join('');
+  const area=`${line}L${X(pts[pts.length-1][0]).toFixed(1)},${Y(0)}L${X(pts[0][0]).toFixed(1)},${Y(0)}Z`;
+  const end=pts[pts.length-1];
+  const grid=[0,mx/2,mx].map(v=>`<line x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)" stroke-width="1"/><text x="${L-6}" y="${Y(v)+4}" text-anchor="end" font-size="10" fill="var(--muted)">${v%1?v.toFixed(1):v}%</text>`).join('');
+  const xl=[[0,'Start'],[5,'Wk 5'],[10,'20 Dec']].map(([k,t])=>`<text x="${X(k)}" y="${H-6}" text-anchor="${k===0?'start':k===10?'end':'middle'}" font-size="10" fill="var(--muted)">${t}</text>`).join('');
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(p.name)}'s % lost by week">
+    <defs><linearGradient id="ga" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--lagoon)" stop-opacity=".35"/><stop offset="1" stop-color="var(--lagoon)" stop-opacity="0"/></linearGradient></defs>
+    ${grid}${xl}
+    <line x1="${X(10)}" x2="${X(10)}" y1="${T}" y2="${T+ih}" stroke="var(--sunset)" stroke-dasharray="3 3"/>
+    <path d="${area}" fill="url(#ga)"/><path d="${line}" fill="none" stroke="var(--lagoon)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="${X(end[0])}" cy="${Y(end[1])}" r="5" fill="var(--lagoon)" stroke="var(--surface)" stroke-width="2"/>
+  </svg>`;
+}
+
+/* ===================== Reveal ===================== */
+let revealTok=0;
+const sleep = ms => new Promise(r=>setTimeout(r, reduced()?Math.min(ms,150):ms));
+async function runReveal(){
+  if(you().w[S.week]==null){ ui.tab='weigh'; render(); return; }
+  const k=S.week, tok=++revealTok;
+  const before = standings(S.revealed);
+  const prevBadges = Object.fromEntries(S.players.map(p=>[p.id, earned(p)]));
+  // Remaining example players weigh in (or miss it, as scripted)
+  S.players.forEach(p=>{ if(!p.isYou && p.w[k]==null && SCRIPT[p.id]) p.w[k]=SCRIPT[p.id][k]; });
+  const results = S.players.map(p=>({p, w:weekPct(p,k)})).sort((a,b)=> (a.w==null?-1e9:a.w)-(b.w==null?-1e9:b.w));
+  const stage=document.createElement('div'); stage.className='stage'; stage.setAttribute('role','dialog'); stage.setAttribute('aria-modal','true');
+  stage.innerHTML=`<div class="stage-in"><div class="kicker">${esc(fmtDay(weekDate(k)))} · 7:00pm</div><h2>${k===COMP.weeks?'The Final Weigh-in':'Week '+k+' Results'}</h2><p class="sub">Biggest % loss this week, revealed from the bottom up</p><div id="rvList" style="display:flex;flex-direction:column-reverse;gap:8px;margin-top:6px"></div><div id="rvFoot" style="display:flex;flex-direction:column;gap:8px;margin-top:6px"><button class="btn alt" data-a="skip">Skip to the winner</button></div></div>`;
+  document.body.appendChild(stage);
+  const list=stage.querySelector('#rvList'), foot=stage.querySelector('#rvFoot');
+  let skip=false; stage.querySelector('[data-a="skip"]').onclick=()=>{ skip=true; };
+  const wait = async ms => { const end=Date.now()+ms; while(Date.now()<end && !skip && tok===revealTok) await new Promise(r=>setTimeout(r,50)); };
+  SFX.drumroll(1.6); await wait(1700);
+  const n=results.length;
+  for(let i=0;i<n;i++){
+    const r=results[i], isWin=i===n-1;
+    if(isWin && !skip){ const d=document.createElement('div'); d.className='drum'; d.textContent='🥁'; list.prepend(d); SFX.drumroll(2.2); await wait(2300); d.remove(); }
+    const pos=n-i;
+    const el=document.createElement('div'); el.className='rv'+(isWin?' win':'');
+    const flag = r.w!=null && r.w>HEALTHY_MAX;
+    el.innerHTML=`<span class="pos">${isWin?'👑':pos}</span><span class="ava">${r.p.emoji}</span><span><b>${esc(r.p.name)}</b><small>${r.w==null?'No weigh-in this week':isWin?'Biggest loser of the week':flag?'Steady on! That’s a big drop':r.w<0?'Gained a little':'This week'}</small></span><span class="p ${r.w==null?'m':r.w<0?'g':''}">${r.w==null?'missed':pctSigned(r.w)}</span>`;
+    list.appendChild(el);
+    if(isWin){ SFX.crash(); SFX.fanfare(); confetti(180); } else SFX.tick();
+    if(!isWin) await wait(1000);
+  }
+  // Commit the week
+  S.revealed = k;
+  const win = weekWinner(k);
+  const after = standings(k);
+  const bottom = after.length>=4 ? after.slice(-2).map(x=>x.p.isYou?'you':x.p.name) : [];
+  S.feed.unshift({id:'r'+k, type:'sys', text:`${k===COMP.weeks?'Final':'Week '+k} results: ${win?win.p.name+' takes the crown 👑 with '+win.w.toFixed(2)+'% lost.':'No one weighed in.'}${bottom.length?' Below the yellow line: '+bottom.join(' and ')+'.':''}`, time:`${fmtDay(weekDate(k))}, 7:00pm`, r:{}});
+  S.players.forEach(p=>{ const nb=[...earned(p,k)].filter(b=>!prevBadges[p.id].has(b)); nb.forEach(b=>{ const B=BADGES.find(x=>x.id===b); S.feed.unshift({id:'b'+k+p.id+b, type:'sys', text:`${p.isYou?'You':p.name} earned ${B.n} ${B.i}.`, time:`${fmtDay(weekDate(k))}, 7:01pm`, r:{}}); }); });
+  const myBefore = before.find(x=>x.p.isYou)?.rank, myAfter = after.find(x=>x.p.isYou).rank;
+  const passer = myAfter>myBefore ? after.find(x=>x.rank===myAfter-1) : null;
+  if(k<COMP.weeks){
+    S.week = k+1;
+    ['mum','tom'].forEach(id=>{ const p=P(id); if(p && SCRIPT[id][S.week]!=null) p.w[S.week]=SCRIPT[id][S.week]; });
+    S.challenge = {week:S.week, joined:false, days:Array(7).fill(false), crew:['mum','jess','dad'].slice(0, 2 + (S.week%2))};
+  }
+  save();
+  foot.innerHTML = k===COMP.weeks
+    ? `<button class="btn" data-a="final">And the Bali Body Battle champion is…</button>`
+    : `<button class="btn" data-a="closestage">See the new leaderboard</button>`;
+  foot.querySelector('button').onclick = () => { stage.remove(); if(k===COMP.weeks){ showFinal(); } else {
+      ui.tab='board'; render();
+      setTimeout(()=>{ if(passer) notify('Bali Body Battle', `🔥 ${passer.p.name} just jumped ahead of you into ${ordinal(passer.rank)}.`);
+        else notify('Bali Body Battle', `🏆 Week ${k} results are in. You're ${ordinal(myAfter)} of ${after.length}.`); }, 700);
+    } };
+}
+const ordinal = n => n+(['th','st','nd','rd'][(n%100-20)%10]||['th','st','nd','rd'][n%100]||'th');
+
+function showFinal(){
+  const st = standings(), w=st[0], last=st[st.length-1];
+  const big = (()=>{ let b=null; S.players.forEach(p=>{ for(let k=1;k<=S.revealed;k++){ const v=weekPct(p,k); if(v!=null&&(!b||v>b.v)) b={p,v,k}; } }); return b; })();
+  const mostC = S.players.map(p=>({p,c:crowns(p)})).sort((a,b)=>b.c-a.c)[0];
+  const longS = S.players.map(p=>({p,s:maxStreak(p,S.revealed)})).sort((a,b)=>b.s-a.s)[0];
+  const pod = i => { const x=st[i]; if(!x) return '<div></div>'; return `<div class="pod p${i+1}"><div class="ava">${x.p.emoji}</div><b>${esc(x.p.isYou?'You':x.p.name)}</b><small>${fmtPct(x.total)}%</small><div class="blk">${i+1}</div></div>`; };
+  const stage=document.createElement('div'); stage.className='stage'; stage.setAttribute('role','dialog'); stage.setAttribute('aria-modal','true');
+  stage.innerHTML=`<div class="stage-in">
+    <div class="kicker">Sunday 20 December · Final results${finished()?'':' (preview with today’s standings)'}</div>
+    <h2>${esc(w.p.isYou?'You win':w.p.name+' wins')}<br>Bali Body Battle</h2>
+    <div class="podium">${pod(1)}${pod(0)}${pod(2)}</div>
+    <div class="potbig num">$${pot()}</div>
+    <p class="sub">The whole pot goes to ${esc(w.p.isYou?'you':w.p.name)} for losing ${fmtPct(w.total)}% of their starting weight.</p>
+    <div class="fstats">
+      <div class="fstat"><small>Team Bali lost together</small><b>${fmtPct(teamPct())}%</b></div>
+      <div class="fstat"><small>Most crowns</small><b>${mostC.p.emoji} ${esc(mostC.p.name)} · ${mostC.c}</b></div>
+      <div class="fstat"><small>Biggest single week</small><b>${big?`${big.p.emoji} ${esc(big.p.name)} · ${big.v.toFixed(2)}%`:'–'}</b></div>
+      <div class="fstat"><small>Longest streak</small><b>${longS.p.emoji} ${esc(longS.p.name)} · ${longS.s} wks</b></div>
+    </div>
+    <div class="fstat" style="text-align:center;border-color:#F5BE4B88"><small>Cocktail duty 🍹</small><b>${esc(last.p.isYou?'You buy':last.p.name+' buys')} the first round in Bali</b></div>
+    <p class="sub">Screenshot this for the family chat 📸</p>
+    <button class="btn" data-a="closestage">Close</button>
+  </div>`;
+  document.body.appendChild(stage);
+  stage.querySelector('[data-a="closestage"]').onclick=()=>{ stage.remove(); render(); };
+  SFX.drumroll(1); setTimeout(()=>{ SFX.crash(); SFX.fanfare(); confetti(220,1.3); setTimeout(()=>confetti(140,1.6),900); }, reduced()?0:1000);
+}
+
+/* ===================== Events ===================== */
+document.addEventListener('click', e=>{
+  const t = e.target.closest('[data-a]'); if(!t) return;
+  if(t.closest('.stage')) return; // stage buttons have their own handlers
+  if(t.dataset.a==='close' && e.target.closest('[data-stop]') && !e.target.closest('button')) return;
+  const a=t.dataset.a, v=t.dataset.v;
+  if(a!=='reset') ui.confirmReset=false;
+  switch(a){
+    case 'pick': ui.pick=v; root.querySelectorAll('.emoji-pick button').forEach(b=>b.setAttribute('aria-pressed', b.dataset.v===v)); return;
+    case 'tab': ui.tab=v; ui.weighErr=''; ui.confirmBig=false; render(); window.scrollTo(0,0); return;
+    case 'sound': S.settings.sound=!S.settings.sound; save(); render(); if(S.settings.sound) SFX.blip(); return;
+    case 'player': ui.sheet={type:'player',id:v}; render(); return;
+    case 'close': ui.sheet=null; render(); return;
+    case 'guide': ui.sheet={type:'guide'}; render(); return;
+    case 'allow': S.settings.notifs=true; ui.sheet=null; save(); render(); setTimeout(()=>notify('Bali Body Battle','🔔 Notifications are on. See you Sunday morning.'),300); return;
+    case 'set': S.settings[v]=!S.settings[v]; save(); t.setAttribute('aria-pressed',S.settings[v]); return;
+    case 'peek': ui.peek=!ui.peek; render(); return;
+    case 'reveal': runReveal(); return;
+    case 'final': showFinal(); return;
+    case 'sfx': SFX[v](); if(v==='chaching') confetti(90); return;
+    case 'ntest': testNotif(v); return;
+    case 'joinchal': S.challenge.joined=true; save(); render(); SFX.blip(); return;
+    case 'day': { const i=+v; S.challenge.days[i]=!S.challenge.days[i]; save(); render(); if(S.challenge.days[i]){ SFX.chaching(); if(S.challenge.days.every(Boolean)){ confetti(120); notify('Bali Body Battle','🎯 Challenge complete. All 7 days ticked off!'); } } return; }
+    case 'react': { const key=v+t.dataset.e, f=S.feed.find(x=>x.id===v); if(!f) return; if(S.mine[key]){ delete S.mine[key]; f.r[t.dataset.e]=Math.max(0,(f.r[t.dataset.e]||1)-1); } else { S.mine[key]=1; f.r[t.dataset.e]=(f.r[t.dataset.e]||0)+1; SFX.blip(); } save(); render(); return; }
+    case 'cheer': { const p=P(v); S.feed.unshift({id:'c'+Date.now(), pid:'you', text:`${t.dataset.e} to ${p.name}`, time:nowLabel(), r:{}}); ui.sheet=null; save(); render(); SFX.blip(); notify('Bali Body Battle',`Sent ${t.dataset.e} to ${p.name}.`); return; }
+    case 'copy': { const txt=`Join our Bali Body Battle 🌴 Code: ${COMP.code}. $${COMP.entry} entry, winner takes the pot. Last weigh-in Sun 20 Dec.`; const done=()=>{ t.textContent='Copied ✓'; setTimeout(()=>{ t.textContent='Copy invite'; },1800); };
+      try{ navigator.clipboard.writeText(txt).then(done, ()=>{ t.textContent=COMP.code; }); }catch(err){ t.textContent=COMP.code; } return; }
+    case 'reset': if(!ui.confirmReset){ ui.confirmReset=true; render(); return; } try{ localStorage.removeItem(KEY); }catch(err){} S=null; ui={tab:'board',sheet:null,confirmBig:false,pick:YOU_EMOJIS[0],joinErr:'',weighErr:'',peek:false}; render(); window.scrollTo(0,0); return;
+  }
+});
+function testNotif(kind){
+  const st=standings(), me=st.find(x=>x.p.isYou), ahead=st.find(x=>x.rank===Math.max(1,me.rank-1));
+  const M = {
+    weigh:['⏰ Weigh-in day!', `${S.players.filter(p=>p.w[S.week]!=null).length} people have already stepped on the scales. Results at 7pm.`],
+    overtake:['🔥 You’ve been passed', `${ahead.p.isYou?'Tom':ahead.p.name} just jumped ahead of you. Time to fight back.`],
+    results:['🏆 Results are in!', `Week ${S.revealed} reveal is live. Who’s wearing the crown?`],
+    countdown:['🌴 Bali countdown', `${daysToFinal()} days until the final weigh-in. Then: cocktails.`],
+  };
+  notify('Bali Body Battle', M[kind].join(' '));
+}
+document.addEventListener('submit', e=>{
+  e.preventDefault();
+  const f=e.target;
+  if(f.id==='joinForm'){
+    const code=document.getElementById('jCode').value.trim().toUpperCase().replace(/\s/g,'');
+    const name=document.getElementById('jName').value.trim();
+    const w=parseFloat(document.getElementById('jWeight').value);
+    const paid=document.getElementById('jPay').checked;
+    ui.joinErr = code!==COMP.code ? `That code doesn't match. Check the invite (it's ${COMP.code} in the demo).`
+      : !name ? 'Add your name so the family knows who you are.'
+      : !(w>=30 && w<=300) ? 'Enter your starting weight in kilograms, for example 82.4.'
+      : !paid ? `Tick the box to confirm your $${COMP.entry} entry.` : '';
+    if(ui.joinErr){ render(); document.getElementById('jName').value=name; document.getElementById('jWeight').value=isNaN(w)?'':w; return; }
+    S=freshState({name, emoji:ui.pick, start:w}); ui.tab='board'; render(); window.scrollTo(0,0);
+    SFX.chaching(); confetti(120);
+    setTimeout(()=>notify('Bali Body Battle',`🌴 Welcome ${name}! You're player 6. The pot is now $${pot()}.`),600);
+    return;
+  }
+  if(f.id==='weighForm'){
+    const inp=document.getElementById('wIn'), w=parseFloat(inp.value), me=you(), k=S.week, prev=lastKnown(me,k-1);
+    if(!(w>=30 && w<=300)){ ui.weighErr='Enter your weight in kilograms, for example 81.6.'; ui.confirmBig=false; render(); return; }
+    const chg=(prev-w)/prev*100;
+    if(Math.abs(chg)>5 && !ui.confirmBig){ ui.confirmBig=true; ui.weighErr=`That's a ${Math.abs(chg).toFixed(1)}% change in a week. Double-check the number, then tap again to confirm.`; render(); document.getElementById('wIn').value=w; return; }
+    me.w[k]=r1(w); ui.weighErr=''; ui.confirmBig=false; save(); render();
+    if(chg>HEALTHY_MAX){ SFX.chaching(); confetti(60); }
+    else if(chg>0){ SFX.chaching(); confetti(140); }
+    else if(chg<0){ SFX.trombone(); }
+    else SFX.blip();
+    // Simulate another family member weighing in shortly after
+    const next=S.players.find(p=>!p.isYou && p.w[k]==null && SCRIPT[p.id] && SCRIPT[p.id][k]!=null);
+    if(next) setTimeout(()=>{ if(S && S.week===k && next.w[k]==null){ next.w[k]=SCRIPT[next.id][k]; save(); render(); notify('Bali Body Battle', `${next.emoji} ${next.name} just weighed in. ${S.players.filter(p=>p.w[k]!=null).length} of ${S.players.length} are in.`); } }, 3500);
+    return;
+  }
+  if(f.id==='postForm'){
+    const inp=document.getElementById('postIn'), txt=inp.value.trim(); if(!txt) return;
+    S.feed.unshift({id:'p'+Date.now(), pid:'you', text:txt, time:nowLabel(), r:{}}); save(); render(); SFX.blip();
+  }
+});
+document.addEventListener('change', e=>{
+  if(e.target.id!=='photoIn' || !e.target.files[0]) return;
+  const img=new Image(), url=URL.createObjectURL(e.target.files[0]);
+  img.onload=()=>{ const s=Math.min(1,480/Math.max(img.width,img.height)), c=document.createElement('canvas'); c.width=img.width*s; c.height=img.height*s; c.getContext('2d').drawImage(img,0,0,c.width,c.height); S.photo=c.toDataURL('image/jpeg',.8); URL.revokeObjectURL(url); save(); render(); };
+  img.src=url;
+});
+document.addEventListener('keydown', e=>{ if(e.key==='Escape' && ui.sheet){ ui.sheet=null; render(); } });
+
+render();
+</script>
