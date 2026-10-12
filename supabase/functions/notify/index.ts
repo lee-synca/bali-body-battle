@@ -1,6 +1,6 @@
 // Bali Body Battle push notifications.
 // - Called every hour by pg_cron with {type:"tick"} and the x-cron-secret header: sends reminders, results and countdowns.
-// - Called by the app with {type:"weighed"} or {type:"post"} (signed-in user): tells everyone else.
+// - Called by the app with {type:"weighed"}, {type:"joined"}, {type:"post"} or {type:"test"} (signed-in user): tells everyone else.
 import { createClient } from "npm:@supabase/supabase-js@2";
 import webpush from "npm:web-push@3.6.7";
 
@@ -68,8 +68,8 @@ async function tick() {
     const daysLeft = Math.round((final.getTime() - today.getTime()) / 864e5);
     const openDate = ow == null ? null : (() => { const d = new Date(c.start_date + "T00:00:00Z"); d.setUTCDate(d.getUTCDate() + ow * 7); return d.toISOString().slice(0, 10); })();
 
-    // Weigh-in day reminders (only for weeks after the start)
-    if (ow != null && ow > 0 && openDate === t.date) {
+    // Weigh-in day reminders
+    if (ow != null && openDate === t.date) {
       const inCount = players.filter((p) => p.weighed_open).length;
       if (t.hour === 8 && await once(`weigh_am:${c.id}:${ow}`)) {
         await Promise.all(subs.filter((s) => s.prefs.weigh).map((s) =>
@@ -137,6 +137,13 @@ Deno.serve(async (req) => {
     if (await once(`weighed:${me.id}:${ow}`)) {
       await Promise.all(others.filter((s) => s.prefs.weigh).map((s) =>
         send(s, "Bali Body Battle", `${me.emoji} ${me.name} just weighed in. ${n} of ${total} are in.`, "weighed")));
+    }
+  } else if (body.type === "joined") {
+    const { count } = await db.from("players").select("id", { count: "exact", head: true }).eq("competition_id", me.competition_id);
+    const { data: comp } = await db.from("competitions").select("entry_fee").eq("id", me.competition_id).single();
+    if (await once(`joined:${me.id}`)) {
+      await Promise.all(others.filter((s) => s.prefs.weigh).map((s) =>
+        send(s, "🌴 New challenger!", `${me.emoji} ${me.name} just joined the battle. The pot is now $${(count ?? 0) * (comp?.entry_fee ?? 50)}.`, "joined")));
     }
   } else if (body.type === "post") {
     const text = String(body.text ?? "").slice(0, 120);

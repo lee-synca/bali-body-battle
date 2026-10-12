@@ -21,7 +21,7 @@ const BADGES = [
 
 /* ===================== State ===================== */
 let session = null, compId = null, LB = null, myWeights = [], posts = [], reactions = [], chalRows = [];
-let pushOn = false, loadErr = '';
+let pushOn = false, pushChecked = false, loadErr = '';
 let ui = { screen:'loading', tab: ls('bbb-tab') || 'board', sheet:null, authMode:'join', pick:EMOJIS[0], err:'', busy:false, confirmBig:false, peek:false, editWeight:false };
 
 function ls(k, v){ try{ if(v===undefined) return localStorage.getItem(k); localStorage.setItem(k, v); }catch(e){ return null; } }
@@ -261,6 +261,15 @@ function weekBanner(){
     ${R() >= 1 ? `<button class="linkish" data-a="replay" style="align-self:flex-start">Replay the Week ${R()} reveal</button>` : ''}
   </section>`;
 }
+/* Nudge anyone who hasn't turned notifications on, so they don't miss Sunday reminders */
+function notifBanner(){
+  if(!pushChecked || pushOn || ui.hideNotif || finished()) return '';
+  const later = `<button class="linkish" data-a="hidenotif" style="align-self:flex-start;color:var(--pass-muted)">Not now</button>`;
+  if(isIOS() && !isStandalone()) return `<div class="install"><b>🔔 Don't miss Sunday weigh-ins</b><span>Add Bali Body Battle to your Home Screen to get weigh-in reminders and results. Then open it from there and turn on notifications.</span><button class="btn small" data-a="guide" style="align-self:flex-start">Show me how</button>${later}</div>`;
+  if(!pushSupported()) return '';
+  if(Notification.permission === 'denied') return `<div class="install"><b>🔕 Notifications are blocked</b><span>To get weigh-in reminders and results, go to your phone's Settings → Notifications → Bali Battle and turn on Allow Notifications.</span>${later}</div>`;
+  return `<div class="install"><b>🔔 Turn on notifications</b><span>Get a reminder on weigh-in mornings, the 7pm results, and a heads-up when someone passes you.</span><button class="btn small" data-a="enablepush" style="align-self:flex-start">Turn on notifications</button>${later}</div>`;
+}
 function boardView(){
   const st = standings(), prev = R() > 0 ? standings(R()-1) : [];
   const prevRank = Object.fromEntries(prev.map(x => [x.p.id, x.rank]));
@@ -279,7 +288,7 @@ function boardView(){
       <span class="pct">${fmtPct(x.total)}<small>%</small><em>${wkTxt}</em></span></button>`;
   });
   const last = st[n-1];
-  return `${passView()}${weekBanner()}
+  return `${notifBanner()}${passView()}${weekBanner()}
     <h2 class="sec">Leaderboard <small>${started ? 'after Week ' + R() + ' · ' : ''}% of starting weight lost</small></h2>
     <div class="board">${rows}</div>
     <p class="note">🍹 <b>Cocktail duty:</b> whoever finishes last buys the first round in Bali.${started && !finished() && last ? ` Right now that's <b>${esc(last.p.id === LB.me ? 'you' : last.p.name)}</b>.` : ''}</p>
@@ -507,10 +516,11 @@ const pushSupported = () => 'serviceWorker' in navigator && 'PushManager' in win
 function b64(s){ const p = '='.repeat((4 - s.length % 4) % 4), b = atob((s + p).replace(/-/g,'+').replace(/_/g,'/')); return Uint8Array.from([...b].map(c => c.charCodeAt(0))); }
 const pushPrefs = () => ({ weigh:settings.weigh, results:settings.results, overtake:settings.overtake, badges:settings.badges, countdown:settings.countdown, banter:settings.banter });
 async function checkPush(){
-  if(!pushSupported() || Notification.permission !== 'granted') { pushOn = false; return; }
+  pushChecked = true;
+  if(!pushSupported() || Notification.permission !== 'granted') { pushOn = false; if(ui.tab === 'board' && !ui.sheet && !document.querySelector('.stage')) render(); return; }
   try{ const reg = await navigator.serviceWorker.ready; const sub = await reg.pushManager.getSubscription(); pushOn = !!sub;
     if(sub){ const j = sub.toJSON(); await sb.from('push_subscriptions').upsert({ endpoint:j.endpoint, player_id:LB.me, p256dh:j.keys.p256dh, auth:j.keys.auth, prefs:pushPrefs() }); }
-    if(ui.tab === 'me') render(); }catch(e){}
+    if(!document.querySelector('.stage') && !ui.sheet && !document.activeElement?.matches('input,textarea')) render(); }catch(e){}
 }
 async function enablePush(){
   if(!pushSupported()){ ui.sheet = { type:'guide' }; render(); return; }
@@ -554,6 +564,7 @@ document.addEventListener('click', async e => {
       case 'replay': runReveal(R()); return;
       case 'final': showFinal(); return;
       case 'enablepush': enablePush(); return;
+      case 'hidenotif': ui.hideNotif = true; render(); return;
       case 'testpush': await sb.functions.invoke('notify', { body:{ type:'test', competition_id:compId } }); toast('Test sent. It should land in a few seconds.'); return;
       case 'logout': await sb.auth.signOut(); session = null; LB = null; ui.screen = 'auth'; ui.authMode = 'login'; ui.err = ''; render(); return;
       case 'copy': { const link = location.origin + location.pathname + '#' + C().code;
@@ -612,6 +623,7 @@ document.addEventListener('submit', async e => {
       ui.busy = false; ui.err = '';
       await loadAll();
       ls('bbb-seen-' + compId, String(R()));
+      sb.functions.invoke('notify', { body:{ type:'joined', competition_id:compId } });
       SFX.chaching(); confetti(140);
       setTimeout(() => toast(`🌴 Welcome ${me().name}! The pot is now $${pot()}.`), 600);
     } else {
