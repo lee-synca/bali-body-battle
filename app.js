@@ -374,6 +374,14 @@ function meView(){
       <button class="btn alt small" data-a="peek" style="align-self:flex-start">${ui.peek ? 'Hide my kilos' : '🔒 Show my kilos (only you)'}</button>
       ${ui.peek && start != null ? `<div class="note num">Started <b>${Number(start).toFixed(1)} kg</b> · latest <b>${latest.toFixed(1)} kg</b> · down <b>${(start - latest).toFixed(1)} kg</b></div>` : ''}
     </section>
+    ${m.is_admin ? `<h2 class="sec">Organiser <small>only you see this</small></h2>
+    <form class="card" id="announceForm">
+      <label class="f" for="annIn">📣 Send an announcement
+        <textarea class="input" id="annIn" maxlength="160" rows="3" placeholder="e.g. Weigh-in tomorrow morning, same scales!"></textarea></label>
+      <p class="muted" style="font-size:13px;margin:0">Goes as a notification to everyone who has them on, and is posted in Banter so the others see it too.</p>
+      ${ui.annConfirm ? `<div class="warn" role="alert">Send this to all ${players().length} players? Tap Send again to confirm.</div>` : ''}
+      <button class="btn" type="submit" ${ui.busy ? 'disabled' : ''}>${ui.annConfirm ? 'Yes, send it' : 'Send'}</button>
+    </form>` : ''}
     <h2 class="sec">Badges <small>${got.size} of ${BADGES.length}</small></h2>
     <div class="badges">${BADGES.map(b => `<div class="badge ${got.has(b.id)?'':'locked'}"><i>${b.i}</i><b>${b.n}</b><small>${b.d}</small></div>`).join('')}</div>
     <h2 class="sec">Before &amp; after <small>private · this phone only</small></h2>
@@ -655,6 +663,21 @@ document.addEventListener('submit', async e => {
     const chg = Number(pct);
     if(chg > HEALTHY_MAX){ SFX.chaching(); confetti(60); } else if(chg > 0){ SFX.chaching(); confetti(140); } else if(chg < 0) SFX.trombone(); else SFX.blip();
     if(firstTime) sb.functions.invoke('notify', { body:{ type:'weighed', competition_id:compId } });
+    return;
+  }
+  if(f.id === 'announceForm'){
+    const txt = val('annIn').trim(); if(!txt) return;
+    if(!ui.annConfirm){ ui.annConfirm = true; render(); document.getElementById('annIn').value = txt; return; }
+    ui.annConfirm = false; ui.busy = true; render(); document.getElementById('annIn').value = txt;
+    try{
+      const { data: post, error } = await sb.from('posts').insert({ competition_id:compId, player_id:LB.me, body:'📣 ' + txt }).select().single();
+      if(error) throw error;
+      posts.unshift(post);
+      const { data, error: fnErr } = await sb.functions.invoke('notify', { body:{ type:'announce', competition_id:compId, text:txt } });
+      if(fnErr) throw fnErr;
+      ui.busy = false; render(); SFX.chaching();
+      toast(`Announcement posted in Banter and sent to ${data?.sent ?? 0} phone${data?.sent === 1 ? '' : 's'} with notifications on.`);
+    }catch(err){ ui.busy = false; render(); toast('Couldn’t send: ' + (err.message || err)); }
     return;
   }
   if(f.id === 'postForm'){

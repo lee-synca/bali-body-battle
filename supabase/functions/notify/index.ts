@@ -1,6 +1,6 @@
 // Bali Body Battle push notifications.
 // - Called every hour by pg_cron with {type:"tick"} and the x-cron-secret header: sends reminders, results and countdowns.
-// - Called by the app with {type:"weighed"}, {type:"joined"}, {type:"post"} or {type:"test"} (signed-in user): tells everyone else.
+// - Called by the app with {type:"weighed"}, {type:"joined"}, {type:"announce"}, {type:"post"} or {type:"test"} (signed-in user): tells everyone else.
 import { createClient } from "npm:@supabase/supabase-js@2";
 import webpush from "npm:web-push@3.6.7";
 
@@ -145,6 +145,14 @@ Deno.serve(async (req) => {
       await Promise.all(others.filter((s) => s.prefs.weigh).map((s) =>
         send(s, "🌴 New challenger!", `${me.emoji} ${me.name} just joined the battle. The pot is now $${(count ?? 0) * (comp?.entry_fee ?? 50)}.`, "joined")));
     }
+  } else if (body.type === "announce") {
+    // Organiser-only message to every phone with notifications on (ignores preferences)
+    if (!me.is_admin) return json({ error: "organiser only" }, 403);
+    const text = String(body.text ?? "").trim().slice(0, 160);
+    if (!text) return json({ error: "empty" }, 400);
+    const all = await subsFor(me.competition_id);
+    await Promise.all(all.map((s) => send(s, "📣 Bali Body Battle", text, "announce")));
+    return json({ ok: true, sent: all.length });
   } else if (body.type === "post") {
     const text = String(body.text ?? "").slice(0, 120);
     await Promise.all(others.filter((s) => s.prefs.banter).map((s) => send(s, `${me.emoji} ${me.name}`, text, "banter")));

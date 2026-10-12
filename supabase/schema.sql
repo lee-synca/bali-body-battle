@@ -226,8 +226,14 @@ grant select, insert, update, delete on all tables in schema public to authentic
 revoke all on all tables in schema public from anon;
 revoke execute on all functions in schema public from public, anon;
 grant execute on all functions in schema public to authenticated, service_role;
+-- Players can only change their own name and avatar (not joined_week or is_admin)
+revoke update on public.players from authenticated;
+grant update (name, emoji) on public.players to authenticated;
 
 -- ============ The Bali Body Battle itself ============
 -- Week 0 = Sunday 11 Oct 2026, final weigh-in (week 10) = Sunday 20 Dec 2026, results at 7pm Melbourne time.
 insert into public.competitions (name, code, entry_fee, start_date, weeks, reveal_time, tz, team_goal)
 values ('Bali Body Battle', 'BALI-2026', 50, '2026-10-11', 10, '19:00', 'Australia/Melbourne', 8);
+
+-- The organiser (can send announcements). Set by hand after they join:
+-- update players set is_admin = true where name = 'Lee';
